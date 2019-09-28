@@ -69,11 +69,11 @@ void PrintState(unsigned char * state);
 void AddRoundKey(unsigned char * roundkey, unsigned char * state);
 void SubBytes(unsigned char * state);
 void ShiftRows(unsigned char * state);
-void Mulby02(unsigned char * ptr);
+unsigned char MulBy02(unsigned char * ptr);
 void MixColumns(unsigned char * M, unsigned char * state);
 
 int main(){
-	
+
 	
 	PrintState(state);
 	
@@ -100,7 +100,7 @@ int main(){
 		//PrintState(state);
 	
 		//AddRoundKey();
-		//PrintState(state);
+		//PrintState(state); 
 	return 0;
 }
 
@@ -175,24 +175,47 @@ void ShiftRows(unsigned char * state){
 /*
 	Mixcolumns subfunctions
 */
+
 void MixColumns(unsigned char * M, unsigned char * state){
-		
-	//if MulBy03 then split to MulBy02 and 01
-	if(*m == 0x03){
-		
+	
+	unsigned char * state_out[16] = { 0x0 };
+	
+	int i,j,k;
+	unsigned char mult; 
+	
+	for(i=0; i<4; i++){
+		for(j=0; j<4; j++){
+			
+			// Calculate i,j state_out vector
+			for(k=0; k<4; k++){
+				mult = M[i+k*4];
+				
+				if(mult == 0x01){
+					state_out[i+j*4] ^= state[k+j*4];
+						
+				} else if(mult == 0x02){
+					state_out[i+j*4] ^= MulBy02(state[k+j*4]);
+					
+				} else {
+					
+				}
+			}
+		}
 	}
 	
 }
 
-void Mulby02(unsigned char * ptr){
+unsigned char MulBy02(unsigned char * ptr){
+	unsigned char val;
 	
-	//0x02*x <=> ( (x<<1) XOR 0x1B ) iff MSB of x == 1
+	//0x02*x <=> ( (x<<1) XOR 0x1B ) iff MSB of x == 1	
+	if( (0x80 & *ptr) == 0x80 ){
+			val = ((*ptr << 1) ^ 0x1B);
+		} else {
+			val = *ptr << 1;
+		}
 	
-	//if((*ptr >= 0x80){
-		*ptr = ((*ptr << 1) ^ 0x1B);
-			//}
-	printf("\n*ptr= %x\n", *ptr);
-	
+	return val;
 }
 
 
