@@ -44,47 +44,87 @@ unsigned char SI[] = {
     0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D };
 
 
-//input
-unsigned char plaintext[] = {0x00, 0x11, 0x22, 0x33	, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
-unsigned char state[] = {0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0};
-unsigned char cipherkey[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
+// Key schedule
+unsigned char roundkeys[] = {
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, //r0
+	0xd6, 0xaa, 0x74, 0xfd, 0xd2, 0xaf, 0x72, 0xfa, 0xda, 0xa6, 0x78, 0xf1, 0xd6, 0xab, 0x76, 0xfe, //r1
+	0xb6, 0x92, 0xcf, 0x0b, 0x64, 0x3d, 0xbd, 0xf1, 0xbe, 0x9b, 0xc5, 0x00, 0x68, 0x30, 0xb3, 0xfe, //r2
+};
 
-// function prototypes
+
+// 4x4 matrix in GF(256)
+unsigned char M[] = {
+	0x02, 0x03, 0x01, 0x01,
+	0x01, 0x02, 0x03, 0x01,
+	0x01, 0x01, 0x02, 0x03,
+	0x03, 0x01, 0x01, 0x02,
+};
+
+// Input
+unsigned char plaintext[] = {0x00, 0x11, 0x22, 0x33	, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
+unsigned char state[16] = { 0 };
+
+// Function prototypes
 void PrintState(unsigned char * state);
+void AddRoundKey(unsigned char * roundkey, unsigned char * state);
 void SubBytes(unsigned char * state);
 void ShiftRows(unsigned char * state);
-//ByteMulby02
+void Mulby02(unsigned char * ptr);
+void MixColumns(unsigned char * M, unsigned char * state);
 
 int main(){
 	
-	PrintState(state);
-	SubBytes(state);
-
-	
-	PrintState(state);
-	ShiftRows(state);
 	
 	PrintState(state);
 	
+	//initialize state vector
+	uint8_t i;
+	for(i=0; i<16; i++)
+		state[i] |= plaintext[i];
+	
+	PrintState(state);
+	
+	//round 0:
+	AddRoundKey(roundkeys, state);
+	PrintState(state);
+	
+	//round 1 to n-1
+		SubBytes(state);
+		PrintState(state);
+	
+	
+		ShiftRows(state);
+		PrintState(state);
+	
+		//MixColumns()
+		//PrintState(state);
+	
+		//AddRoundKey();
+		//PrintState(state);
 	return 0;
 }
+
+/*
+	Function definitions
+*/
 
 void PrintState(unsigned char * state){
 	int i;
 	
 	for(i=0; i<16; i++){
-/*		if( (i>0) && ((i+1)%4 == 0)){
-			printf("%x \n", state[i]);
-		}
-		else {
-			printf("%x \t", state[i]);
-		}	*/
 		printf("%x \t",state[i]);
 	}
 	printf("\n\n");
 }
 
-//function definitons
+void AddRoundKey(unsigned char * roundkey, unsigned char * state){
+	uint8_t i;
+	
+	for(i=0; i<16; i++){
+		state[i] ^= roundkey[i];
+	}
+}
+
 void SubBytes(unsigned char * state){
 	
 	int i;							//incrementer
@@ -113,22 +153,6 @@ void ShiftRows(unsigned char * state){
 	unsigned char new[16];
 	
 	// circular shift:   y = (x << bitshift) | (x >> (8 - bitshift));
-/*	for(i=0; i<4; i++){
-		for(j=0; j<4; j++){
-		
-			if(j < (4-i)){
-				tmp[j] = state[i*4+j+i];
-			}
-			else {
-				tmp[j] = state[i*4-(4-i)+j];
-			}
-		}
-		//printf("tmp[%d]=%x\n", j, tmp[j]);
-		
-		for(j=0; j<4; j++){
-			state[i*4+j] = tmp[j];
-		} */
-	
 	for(j=0;j<4;j++){
 		for(i=0;i<4;i++){
 			// shift left by i bytes 
@@ -146,10 +170,30 @@ void ShiftRows(unsigned char * state){
 			state[i+4*j] = new[i+4*j];
 		}
 	}
-
+	
+}
+/*
+	Mixcolumns subfunctions
+*/
+void MixColumns(unsigned char * M, unsigned char * state){
+		
+	//if MulBy03 then split to MulBy02 and 01
+	if(*m == 0x03){
+		
+	}
 	
 }
 
+void Mulby02(unsigned char * ptr){
+	
+	//0x02*x <=> ( (x<<1) XOR 0x1B ) iff MSB of x == 1
+	
+	//if((*ptr >= 0x80){
+		*ptr = ((*ptr << 1) ^ 0x1B);
+			//}
+	printf("\n*ptr= %x\n", *ptr);
+	
+}
 
 
 
