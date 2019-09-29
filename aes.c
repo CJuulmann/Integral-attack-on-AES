@@ -4,9 +4,9 @@
 #include "aes.h"
 
 
-/*
+/* =========================================
 	Function definitions
-*/
+   ========================================= */
 
 void PrintState(unsigned char * state){
 	int i;
@@ -17,6 +17,10 @@ void PrintState(unsigned char * state){
 	printf("\n\n");
 }
 
+/* =========================================
+	AES Encryption / Decryption subfunctions
+   ========================================= */
+	
 void AddRoundKey(unsigned char * roundkey, unsigned char * state){
 	uint8_t i;
 	
@@ -47,34 +51,74 @@ void SubBytes(unsigned char * state, unsigned char * S){
 	}
 }
 
+void InvSubBytes(unsigned char * state, unsigned char * invS){
+	uint8_t i;			
+	uint8_t a, b, idx;				
+	
+	for(i=0; i<16; i++){
+		
+		// mask first and last four bits for a,b entries
+		a = (uint8_t)(state[i] & 0xf0);
+		a = a >> 4;
+		
+		b = (uint8_t)(state[i] & 0x0f);
+		
+		// inverse S-box lookup
+		idx = ((16*a)+b);
+		state[i] = invS[idx];
+	}
+}
+
 void ShiftRows(unsigned char * state){
 	
 	int i, j;
-	unsigned char new[16];
+	unsigned char tmp[16];
 	
 	// circular shift:   y = (x << bitshift) | (x >> (8 - bitshift));
 	for(j=0;j<4;j++){
 		for(i=0;i<4;i++){
 			// shift left by i bytes 
 			if(j-i<0){
-				new[i+4*(4+(j-i))] = state[i+4*j];
+				tmp[i+4*(4+(j-i))] = state[i+4*j];
 			}
 			else{
-				new[i+4*(j-i)] = state[i+4*j];
+				tmp[i+4*(j-i)] = state[i+4*j];
 			}
 		}
 	}
-	
+	// copy shifted array to AES state vector	
 	for(j=0;j<4;j++){
 		for(i=0;i<4;i++){
-			state[i+4*j] = new[i+4*j];
+			state[i+4*j] = tmp[i+4*j];
 		}
 	}
 	
 }
-/*
-	Mixcolumns
-*/
+
+void InvShiftRows(unsigned char * state){
+	
+	int i, j;
+	unsigned char tmp[16];
+	
+	// circular shift:   y = (x << bitshift) | (x >> (8 - bitshift));
+	for(j=0;j<4;j++){
+		for(i=0;i<4;i++){
+			// shift right by i bytes 
+			if(j-i<0){
+				tmp[i+4*(4+(j-i))] = state[i+4*j];
+			}
+			else{
+				tmp[i+4*(j-i)] = state[i+4*j];
+			}
+		}
+	}
+	// copy shifted array to AES state vector
+	for(j=0;j<4;j++){
+		for(i=0;i<4;i++){
+			state[i+4*j] = tmp[i+4*j];
+		}
+	}
+}
 
 void MixColumns(unsigned char * M, unsigned char * state){
 	
@@ -102,13 +146,14 @@ void MixColumns(unsigned char * M, unsigned char * state){
 			}
 		}
 	}
-	
+	// copy temporary array to AES state vector
 	for(j=0;j<4;j++){
 		for(i=0;i<4;i++){
 			state[i+4*j] = state_out[i+4*j];
 		}
 	}
 }
+
 
 unsigned char MulBy02(unsigned char * ptr){
 	unsigned char val;
@@ -122,10 +167,11 @@ unsigned char MulBy02(unsigned char * ptr){
 	
 	return val;
 }
-/*
-	AES-128
-*/
-void AES_128(unsigned char * plaintext, unsigned char * roundkey, unsigned char * state, unsigned char * M, unsigned char * S, uint8_t rounds){
+
+/* ==================================
+	AES ENC: putting it all together
+   ================================== */
+void AES_ENC(unsigned char * plaintext, unsigned char * roundkey, unsigned char * state, unsigned char * M, unsigned char * S, uint8_t rounds){
 	
 	PrintState(state);
 	
