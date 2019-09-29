@@ -3,6 +3,13 @@
 #include <string.h>
 #include "aes.h"
 
+// 4x4 matrix in GF(256)
+unsigned char M[] = {
+	0x02, 0x01, 0x01, 0x03,
+	0x03, 0x02, 0x01, 0x01, 
+	0x01, 0x03, 0x02, 0x01,
+	0x01, 0x01, 0x03, 0x02
+};
 
 /* =========================================
 	Function definitions
@@ -23,7 +30,7 @@ void PrintState(unsigned char * state){
 	
 void AddRoundKey(unsigned char * roundkey, unsigned char * state){
 	uint8_t i;
-	
+		
 	for(i=0; i<16; i++){
 		state[i] ^= roundkey[i];
 	}
@@ -31,8 +38,8 @@ void AddRoundKey(unsigned char * roundkey, unsigned char * state){
 
 void SubBytes(unsigned char * state, unsigned char * S){
 	
-	int i;							//incrementer
-	uint8_t a, b, idx;				//entries
+	uint8_t i;
+	uint8_t a, b, idx;					//entries
 	
 	for(i=0; i<16; i++){
 		
@@ -51,30 +58,11 @@ void SubBytes(unsigned char * state, unsigned char * S){
 	}
 }
 
-void InvSubBytes(unsigned char * state, unsigned char * invS){
-	uint8_t i;			
-	uint8_t a, b, idx;				
-	
-	for(i=0; i<16; i++){
-		
-		// mask first and last four bits for a,b entries
-		a = (uint8_t)(state[i] & 0xf0);
-		a = a >> 4;
-		
-		b = (uint8_t)(state[i] & 0x0f);
-		
-		// inverse S-box lookup
-		idx = ((16*a)+b);
-		state[i] = invS[idx];
-	}
-}
-
 void ShiftRows(unsigned char * state){
 	
-	int i, j;
+	uint8_t i, j;
 	unsigned char tmp[16];
 	
-	// circular shift:   y = (x << bitshift) | (x >> (8 - bitshift));
 	for(j=0;j<4;j++){
 		for(i=0;i<4;i++){
 			// shift left by i bytes 
@@ -104,11 +92,11 @@ void InvShiftRows(unsigned char * state){
 	for(j=0;j<4;j++){
 		for(i=0;i<4;i++){
 			// shift right by i bytes 
-			if(j-i<0){
-				tmp[i+4*(4+(j-i))] = state[i+4*j];
+			if(3-(j+i)<0){
+				tmp[i+4*(j+i-4)] = state[i+4*j];
 			}
 			else{
-				tmp[i+4*(j-i)] = state[i+4*j];
+				tmp[i+4*(j+i)] = state[i+4*j];
 			}
 		}
 	}
@@ -169,22 +157,21 @@ unsigned char MulBy02(unsigned char * ptr){
 }
 
 /* ==================================
-	AES ENC: putting it all together
+	AES encryption
    ================================== */
-void AES_ENC(unsigned char * plaintext, unsigned char * roundkey, unsigned char * state, unsigned char * M, unsigned char * S, uint8_t rounds){
-	
-	PrintState(state);
-	
+void AES_ENC(unsigned char * plaintext, unsigned char * roundkey, unsigned char * state, unsigned char * S, int rounds){
+		
 	//initialize state vector
-	uint8_t i;
+	int i;
 	for(i=0; i<16; i++)
 		state[i] |= plaintext[i];
 	
-	PrintState(state);
+	printf("============\npre-whitening\n"); PrintState(state);
 	
 	//round 0:
+	printf("round-key\n"); PrintState(roundkey);
 	AddRoundKey(roundkey, state);
-	printf("round 0: "); PrintState(state);
+	printf("round 0\n"); PrintState(state);
 	
 	//round 1 to n-1
 	for(i=1; i<=rounds-1; i++){
@@ -211,6 +198,7 @@ void AES_ENC(unsigned char * plaintext, unsigned char * roundkey, unsigned char 
 	ShiftRows(state);
 	PrintState(state);
 	
+	printf("round key "); PrintState(&roundkey[i*16]);
 	AddRoundKey(&roundkey[i*16], state);
 	PrintState(state); 
 }

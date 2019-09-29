@@ -1,2 +1,2 @@
-aes_sw: aes_sw.c aes.c 
-	gcc -o aes_sw aes_sw.c aes.c
+aes_sw: integral_cryptanalysis.c aes.c 
+	gcc -o attack integral_cryptanalysis.c aes.c
