@@ -12,6 +12,7 @@
 #include "aes.h"
 #include <inttypes.h>
 #include <stdio.h>
+#include <string.h>
 
 // Function prototype
 
@@ -71,22 +72,25 @@ void integral(unsigned char * ciphertext_set){
 	int i;
 	unsigned char tmp[4096];
 	
-	// Copy set to local scope for processing
-	for(i=0; i<4096; i++){
-		tmp[i] = ciphertext_set[i];
-	}
+	// Copy ciphertext-set to local scope
+	//memcpy(tmp, ciphertext_set, 4096);
 	
-	// Guessing roundkey on ciphertext set
+	// Guessing roundkey on ciphertext-set
 	int rk,ct;
 	unsigned char roundkey_guess[16] = { 0x00 };
 	unsigned char sum;
-	unsigned char candidates[256] = {[0 ... 255] = 0x01 };
+	unsigned char candidates[256] = {[0 ... 255] = 0x01 }; // Assume all are candidates and rule out 
 	unsigned char tmp_candidates[256] = { 0 };
 		
 	// Searching roundkey-space on a single byte at a time for all ciphertexts
 	for(rk=0; rk<256; rk++){
+		
+		// Copy ciphertext-set to local scope for each rk value
+		memcpy(tmp, ciphertext_set, 4096);
+		PrintState(tmp);
 		sum = 0x00;	
 		roundkey_guess[0] = (unsigned char) rk;
+
 		// printf("roundkey_guess vector=");PrintState(roundkey_guess);
 			
 		// Searching with key guess on all ciphertexts values for one byte at a time
@@ -109,7 +113,7 @@ void integral(unsigned char * ciphertext_set){
 			
 		 	// }
 		}
-		// If guessed round key (rk) tried on all values of CipherText sums to 0 then rk is a candidate
+		// If guessed round key (rk) computed on all values of CipherText sums to 0 then rk is a candidate
 		if(sum == 0){
 			tmp_candidates[rk] = 0x01;
 		} else {
@@ -124,7 +128,6 @@ void integral(unsigned char * ciphertext_set){
 	for(i=0; i<256; i++){
 		printf("rk: 0x%x = 0x%x\t tmp = 0x%x\n", i, candidates[i], tmp_candidates[i]);
 	}
-	
 	
 }
 
