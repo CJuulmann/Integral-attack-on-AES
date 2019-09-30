@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 
-// Function prototype
+// Function prototypes
 void integral(unsigned char * ciphertext_set);
 
 // Expanded key (using https://www.cryptool.org/en/cto-highlights/aes)
@@ -53,8 +53,8 @@ int main(){
 	
 	// Encrypt set1 plaintext and store in set1 ciphertext
 	for(i=0; i<256; i++){
-		AES_ENC(&set1_plaintext[i*16], roundkeys, &set1_ciphertext[i*16], S, 4);
-		AES_ENC(&set2_plaintext[i*16], roundkeys, &set2_ciphertext[i*16], S, 4);
+		AES_enc(&set1_plaintext[i*16], roundkeys, &set1_ciphertext[i*16], S, 4);
+		AES_enc(&set2_plaintext[i*16], roundkeys, &set2_ciphertext[i*16], S, 4);
 	}
 	
 	// Run attack for chosen sets of ciphertexts
@@ -71,34 +71,36 @@ int main(){
 
 void integral(unsigned char * ciphertext_set){
 	
-	int i;
-	unsigned char tmp[4096];
+	int i, rk, ct;
 	
-	// Guessing roundkey on ciphertext-set
-	int rk,ct;
+	unsigned char tmp[4096];
 	unsigned char roundkey_guess[16] = { 0x00 };
+	
 	unsigned char sum;
-	unsigned char tmp_candidates[256] = { 0 };
+	unsigned char tmp_candidates[256] = { 0x0 };
 		
-	// Searching roundkey-space on a single byte at a time for all ciphertexts
+	// Integrate for each round key (rk)
 	for(rk=0; rk<256; rk++){
 		
-		// Copy ciphertext-set to local scope for each rk value
+		// Copy ciphertext set to local scope for each rk value
 		memcpy(tmp, ciphertext_set, 4096);
-		PrintState(tmp);
+		
+		// Initialize sum and round key guess for this loop-round
 		sum = 0x00;	
 		roundkey_guess[0] = (unsigned char) rk;
 			
-		// Searching with key guess on all ciphertexts values for one byte at a time
+		// Compute with key guess on all ciphertexts values for one byte at a time
 		for(ct=0; ct<256; ct++){
 			
-			AddRoundKey(roundkey_guess, &tmp[ct*16]);			
-			InvShiftRows(&tmp[ct*16]);			
-			SubBytes(&tmp[ct*16], SI);
+			// Compute backwards through last special round of AES
+			addRoundKey(roundkey_guess, &tmp[ct*16]);				// addRoundKey is self-inverse		
+			invShiftRows(&tmp[ct*16]);								// row i shift i bytes to the right
+			subBytes(&tmp[ct*16], SI);								// substitute using inverse S-box
 			
-			sum ^=tmp[ct*16];
+			sum ^=tmp[ct*16];										// xor-summatation of sub-results
 		}
-		// If guessed round key (rk) computed on all values of CipherText sums to 0 then rk is a candidate
+		
+		// If guessed rk computed on all values of the ciphertext set sums to 0 then rk is a candidate
 		if(sum == 0){
 			tmp_candidates[rk] = 0x01;
 		} else {
@@ -106,6 +108,7 @@ void integral(unsigned char * ciphertext_set){
 		}
 	}
 	
+	// Once done testing for each rk on the given ciphertext set, rule out candidates not in tmp_candidates
 	for(i=0; i<256; i++){
 		candidates[i] *= tmp_candidates[i];
 	}

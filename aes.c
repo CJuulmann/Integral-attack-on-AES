@@ -15,7 +15,7 @@ unsigned char M[] = {
 	Function definitions
    ========================================= */
 
-void PrintState(unsigned char * state){
+void printState(unsigned char * state){
 	int i;
 	
 	for(i=0; i<16; i++){
@@ -28,7 +28,7 @@ void PrintState(unsigned char * state){
 	AES Encryption / Decryption subfunctions
    ========================================= */
 	
-void AddRoundKey(unsigned char * roundkey, unsigned char * state){
+void addRoundKey(unsigned char * roundkey, unsigned char * state){
 	uint8_t i;
 		
 	for(i=0; i<16; i++){
@@ -36,10 +36,10 @@ void AddRoundKey(unsigned char * roundkey, unsigned char * state){
 	}
 }
 
-void SubBytes(unsigned char * state, unsigned char * S){
+void subBytes(unsigned char * state, unsigned char * S){
 	
 	uint8_t i;
-	uint8_t a, b, idx;					//entries
+	uint8_t a, b, idx;					//entries to S-box
 	
 	for(i=0; i<16; i++){
 		
@@ -55,7 +55,7 @@ void SubBytes(unsigned char * state, unsigned char * S){
 	}
 }
 
-void ShiftRows(unsigned char * state){
+void shiftRows(unsigned char * state){
 	
 	uint8_t i, j;
 	unsigned char tmp[16];
@@ -80,7 +80,7 @@ void ShiftRows(unsigned char * state){
 	
 }
 
-void InvShiftRows(unsigned char * state){
+void invShiftRows(unsigned char * state){
 	
 	int i, j;
 	unsigned char tmp[16];
@@ -104,7 +104,7 @@ void InvShiftRows(unsigned char * state){
 	}
 }
 
-void MixColumns(unsigned char * M, unsigned char * state){
+void mixColumns(unsigned char * M, unsigned char * state){
 	
 	unsigned char state_out[16] = { 0x0 };
 	
@@ -122,15 +122,15 @@ void MixColumns(unsigned char * M, unsigned char * state){
 					state_out[i+j*4] ^= state[k+j*4];
 						
 				} else if(mult == 0x02){
-					state_out[i+j*4] ^= MulBy02(&state[k+j*4]);
+					state_out[i+j*4] ^= mulBy02(&state[k+j*4]);
 					
 				} else {
-					state_out[i+j*4] ^= ( MulBy02(&state[k+j*4]) ) ^ state[k+j*4];
+					state_out[i+j*4] ^= ( mulBy02(&state[k+j*4]) ) ^ state[k+j*4];
 				}
 			}
 		}
 	}
-	// copy temporary array to AES state vector
+	// copy temporary state array to AES state vector
 	for(j=0;j<4;j++){
 		for(i=0;i<4;i++){
 			state[i+4*j] = state_out[i+4*j];
@@ -139,7 +139,7 @@ void MixColumns(unsigned char * M, unsigned char * state){
 }
 
 
-unsigned char MulBy02(unsigned char * ptr){
+unsigned char mulBy02(unsigned char * ptr){
 	unsigned char val;
 	
 	//0x02*x <=> ( (x<<1) XOR 0x1B ) iff MSB of x == 1	(where x is an 8-bit value)
@@ -155,30 +155,30 @@ unsigned char MulBy02(unsigned char * ptr){
 /* ==================================
 	AES encryption
    ================================== */
-void AES_ENC(unsigned char * plaintext, unsigned char * roundkey, unsigned char * state, unsigned char * S, int rounds){
+void AES_enc(unsigned char * plaintext, unsigned char * roundkey, unsigned char * state, unsigned char * S, int rounds){
 		
-	// Initialize state vector
 	int i;
+	
+	// Initialize state vector
 	for(i=0; i<16; i++)
 		state[i] |= plaintext[i];
 
-	// Round 0:
-	AddRoundKey(roundkey, state);
+	addRoundKey(roundkey, state);
 
 	
 	// Round 1 to n-1
 	for(i=1; i<=rounds-1; i++){
 
-		SubBytes(state, S);
-		ShiftRows(state);
-		MixColumns(M, state);
-		AddRoundKey(&roundkey[i*16], state);
+		subBytes(state, S);
+		shiftRows(state);
+		mixColumns(M, state);
+		addRoundKey(&roundkey[i*16], state);
 	}
 	
 	// Last round
-	SubBytes(state, S);
-	ShiftRows(state);
-	AddRoundKey(&roundkey[i*16], state);
+	subBytes(state, S);
+	shiftRows(state);
+	addRoundKey(&roundkey[i*16], state);
 }
 
 
