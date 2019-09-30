@@ -13,9 +13,11 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 // Function prototypes
 void integral(unsigned char * ciphertext_set);
+int roundKeyFound(unsigned char * candidates, int n);
 
 // Expanded key (using https://www.cryptool.org/en/cto-highlights/aes)
 unsigned char roundkeys[] = {
@@ -43,32 +45,36 @@ unsigned char set4_ciphertext[4096] = { 0 };
 unsigned char candidates[256] = {[0 ... 255] = 0x01 }; // Assume all are candidates and rule out as we integrate over multiple sets
 
 int main(){
-
-	// Initialize chosen plaintexts with the first byte different
+	
 	int i;
+	
+	// while(!roundKeyFound(candidates, 16)){
+	
+	// Initialize chosen plaintexts with the first byte different
 	for(i=0; i<256; i++){
 		set1_plaintext[i*16] = i;
-		set2_plaintext[i*16] = (unsigned char) i;
+		set2_plaintext[i*16] = i;
 	}
-	
-	// Encrypt set1 plaintext and store in set1 ciphertext
+	// Encrypt plaintext sets and save to corresponding ciphertext sets
 	for(i=0; i<256; i++){
 		AES_enc(&set1_plaintext[i*16], roundkeys, &set1_ciphertext[i*16], S, 4);
 		AES_enc(&set2_plaintext[i*16], roundkeys, &set2_ciphertext[i*16], S, 4);
 	}
-	
+
 	// Run attack for chosen sets of ciphertexts
 	integral(set1_ciphertext);
 	integral(set2_ciphertext);
+	// }
 	
-	for(i=0; i<256; i++){
-		printf("candidate '0x%x' => %d\n", i, candidates[i]);
-	}
+	// for(i=0; i<256; i++){
+		// printf("candidate '0x%x' => %d\n", i, candidates[i]);
+	// }
 	
 	return 0;
 }
 
 
+// Function definitons
 void integral(unsigned char * ciphertext_set){
 	
 	int i, rk, ct;
@@ -112,6 +118,23 @@ void integral(unsigned char * ciphertext_set){
 	for(i=0; i<256; i++){
 		candidates[i] *= tmp_candidates[i];
 	}
+}
+
+int roundKeyFound(unsigned char * candidates, int n){
+	int i, sum;
+	
+	sum = 0;
+	
+	// candidates (cand) contain 0s and 1s; 1 => value is cand and 0 => cand is not
+	for(i=0; i<256; i++){
+		sum += candidates[i];
+	}
+	
+	// If n candidates are found we are done
+	if(sum == n)
+		return 1;
+	else
+		return 0;
 }
 
 
