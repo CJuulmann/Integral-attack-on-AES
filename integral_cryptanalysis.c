@@ -59,7 +59,7 @@ int main(){
 	}
 	
 	// Run attack for chosen sets of ciphertexts
-	integral(set1_ciphertext);
+	integral(&set1_ciphertext[0]);
 	
 	
 	return 0;
@@ -69,12 +69,11 @@ int main(){
 void integral(unsigned char * ciphertext_set){
 	
 	int i;
-	unsigned char tmp[256];
+	unsigned char tmp[4096];
 	
 	// Copy set to local scope for processing
-	for(i=0; i<256; i++){
+	for(i=0; i<4096; i++){
 		tmp[i] = ciphertext_set[i];
-		printf("0x%x ", tmp[i]);
 	}
 	
 	// Guessing roundkey on ciphertext set

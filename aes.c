@@ -88,7 +88,6 @@ void InvShiftRows(unsigned char * state){
 	int i, j;
 	unsigned char tmp[16];
 	
-	// circular shift:   y = (x << bitshift) | (x >> (8 - bitshift));
 	for(j=0;j<4;j++){
 		for(i=0;i<4;i++){
 			// shift right by i bytes 
