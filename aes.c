@@ -48,13 +48,10 @@ void SubBytes(unsigned char * state, unsigned char * S){
 		a = a >> 4;
 		
 		b = (uint8_t)(state[i] & 0x0f);
-		//printf("state=%x \t a=%u b=%u\n",state[i], a, b);
-		//printf("a=%u b=%u\n\n", a, b);
-		
+
 		// S-box lookup
 		idx = ((16*a)+b);
 		state[i] = S[idx];
-		//printf("idx=%u\t S[idx]=%x \t state[i]=%x\n", idx, S[idx], state[i]);
 	}
 }
 
@@ -145,7 +142,7 @@ void MixColumns(unsigned char * M, unsigned char * state){
 unsigned char MulBy02(unsigned char * ptr){
 	unsigned char val;
 	
-	//0x02*x <=> ( (x<<1) XOR 0x1B ) iff MSB of x == 1	
+	//0x02*x <=> ( (x<<1) XOR 0x1B ) iff MSB of x == 1	(where x is an 8-bit value)
 	if( (0x80 & *ptr) == 0x80 ){
 			val = ((*ptr << 1) ^ 0x1B);
 		} else {
@@ -160,46 +157,28 @@ unsigned char MulBy02(unsigned char * ptr){
    ================================== */
 void AES_ENC(unsigned char * plaintext, unsigned char * roundkey, unsigned char * state, unsigned char * S, int rounds){
 		
-	//initialize state vector
+	// Initialize state vector
 	int i;
 	for(i=0; i<16; i++)
 		state[i] |= plaintext[i];
-	
-	// printf("============\npre-whitening\n"); PrintState(state);
-	
-	//round 0:
-	// printf("round-key\n"); PrintState(roundkey);
+
+	// Round 0:
 	AddRoundKey(roundkey, state);
-	// printf("round 0\n"); PrintState(state);
+
 	
-	//round 1 to n-1
+	// Round 1 to n-1
 	for(i=1; i<=rounds-1; i++){
-		// printf("round %d\n", i);
+
 		SubBytes(state, S);
-		// PrintState(state);
-	
-	
 		ShiftRows(state);
-		// PrintState(state);
-	
 		MixColumns(M, state);
-		// PrintState(state);
-			
 		AddRoundKey(&roundkey[i*16], state);
-		// PrintState(state);
 	}
-	// printf("round %d\n", i);
 	
-	//last round
+	// Last round
 	SubBytes(state, S);
-	// PrintState(state);
-	
 	ShiftRows(state);
-	// PrintState(state);
-	
-	// printf("round key \n"); PrintState(&roundkey[i*16]);
 	AddRoundKey(&roundkey[i*16], state);
-	// PrintState(state);
 }
 
 

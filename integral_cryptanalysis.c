@@ -15,12 +15,11 @@
 #include <string.h>
 
 // Function prototype
-
-
+void integral(unsigned char * ciphertext_set);
 
 // Expanded key (using https://www.cryptool.org/en/cto-highlights/aes)
 unsigned char roundkeys[] = {
-	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, //r0
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, //r0 (cipherkey)
 	0xd6, 0xaa, 0x74, 0xfd, 0xd2, 0xaf, 0x72, 0xfa, 0xda, 0xa6, 0x78, 0xf1, 0xd6, 0xab, 0x76, 0xfe, //r1
 	0xb6, 0x92, 0xcf, 0x0b, 0x64, 0x3d, 0xbd, 0xf1, 0xbe, 0x9b, 0xc5, 0x00, 0x68, 0x30, 0xb3, 0xfe, //r2
 	0xb6, 0xff, 0x74, 0x4e, 0xd2, 0xc2, 0xc9, 0xbf, 0x6c, 0x59, 0x0c, 0xbf, 0x04, 0x69, 0xbf, 0x41,	//r3
@@ -31,37 +30,40 @@ unsigned char roundkeys[] = {
 unsigned char set1_plaintext[4096] = {[0 ... 4095] = 0x00 };
 unsigned char set1_ciphertext[4096] = { 0x00 };
 
-/*
-unsigned char set2_plaintext[4096] = {[0 ... 4095] = 1 };
+unsigned char set2_plaintext[4096] = {[0 ... 4095] = 0x01 };
 unsigned char set2_ciphertext[4096] = { 0 };
 
-unsigned char set3_plaintext[4096] = {[0 ... 4095] = 2 };
+unsigned char set3_plaintext[4096] = {[0 ... 4095] = 0x02 };
 unsigned char set3_ciphertext[4096] = { 0 };
 
-unsigned char set4_plaintext[4096] = {[0 ... 4095] = 3 };
+unsigned char set4_plaintext[4096] = {[0 ... 4095] = 0x03 };
 unsigned char set4_ciphertext[4096] = { 0 };
-*/
 
-void integral(unsigned char * ciphertext_set);
+// Candidates array
+unsigned char candidates[256] = {[0 ... 255] = 0x01 }; // Assume all are candidates and rule out as we integrate over multiple sets
 
 int main(){
 
 	// Initialize chosen plaintexts with the first byte different
 	int i;
 	for(i=0; i<256; i++){
-		//set1_plaintext[i*16] = i;
-		set1_plaintext[i*16] = (unsigned char) i;
+		set1_plaintext[i*16] = i;
+		set2_plaintext[i*16] = (unsigned char) i;
 	}
 	
 	// Encrypt set1 plaintext and store in set1 ciphertext
 	for(i=0; i<256; i++){
 		AES_ENC(&set1_plaintext[i*16], roundkeys, &set1_ciphertext[i*16], S, 4);
-		//AES_ENC(&set2_plaintext[i*16], roundkeys, &set2_ciphertext[i*16], S, 4);
+		AES_ENC(&set2_plaintext[i*16], roundkeys, &set2_ciphertext[i*16], S, 4);
 	}
 	
 	// Run attack for chosen sets of ciphertexts
 	integral(&set1_ciphertext[0]);
+	integral(&set2_ciphertext[0]);
 	
+	for(i=0; i<256; i++){
+		printf("candidate '0x%x' => %d\n", i, candidates[i]);
+	}
 	
 	return 0;
 }
@@ -72,14 +74,10 @@ void integral(unsigned char * ciphertext_set){
 	int i;
 	unsigned char tmp[4096];
 	
-	// Copy ciphertext-set to local scope
-	//memcpy(tmp, ciphertext_set, 4096);
-	
 	// Guessing roundkey on ciphertext-set
 	int rk,ct;
 	unsigned char roundkey_guess[16] = { 0x00 };
 	unsigned char sum;
-	unsigned char candidates[256] = {[0 ... 255] = 0x01 }; // Assume all are candidates and rule out 
 	unsigned char tmp_candidates[256] = { 0 };
 		
 	// Searching roundkey-space on a single byte at a time for all ciphertexts
@@ -125,10 +123,9 @@ void integral(unsigned char * ciphertext_set){
 		candidates[i] *= tmp_candidates[i];
 	}
 	
-	for(i=0; i<256; i++){
-		printf("rk: 0x%x = 0x%x\t tmp = 0x%x\n", i, candidates[i], tmp_candidates[i]);
-	}
-	
+	// for(i=0; i<256; i++){
+		// printf("rk: 0x%x = 0x%x\t tmp = 0x%x\n", i, candidates[i], tmp_candidates[i]);
+	// }
 }
 
 
