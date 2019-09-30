@@ -41,7 +41,7 @@ unsigned char set4_plaintext[4096] = {[0 ... 4095] = 3 };
 unsigned char set4_ciphertext[4096] = { 0 };
 */
 
-void integral(unsigned char ciphertext_set[]);
+void integral(unsigned char * ciphertext_set);
 
 int main(){
 
@@ -58,14 +58,33 @@ int main(){
 		//AES_ENC(&set2_plaintext[i*16], roundkeys, &set2_ciphertext[i*16], S, 4);
 	}
 	
+	// Run attack for chosen sets of ciphertexts
+	integral(set1_ciphertext);
+	
+	
+	return 0;
+}
+
+
+void integral(unsigned char * ciphertext_set){
+	
+	int i;
+	unsigned char tmp[256];
+	
+	// Copy set to local scope for processing
+	for(i=0; i<256; i++){
+		tmp[i] = ciphertext_set[i];
+		printf("0x%x ", tmp[i]);
+	}
+	
 	// Guessing roundkey on ciphertext set
 	int rk,ct;
 	unsigned char roundkey_guess[16] = { 0x00 };
 	unsigned char sum;
 	unsigned char candidates[256] = {[0 ... 255] = 0x01 };
-	unsigned char tmp[256] = { 0 };
+	unsigned char tmp_candidates[256] = { 0 };
 		
-	// Searching roundkey-space for that one byte
+	// Searching roundkey-space on a single byte at a time for all ciphertexts
 	for(rk=0; rk<256; rk++){
 		sum = 0x00;	
 		roundkey_guess[0] = (unsigned char) rk;
@@ -77,49 +96,34 @@ int main(){
 			// printf("\nct=0x%x:\n", set1_ciphertext[ct*16]);
 			// printf("before AddRoundKey: set1_ciphertext=0x%x\n", set1_ciphertext[ct*16]);
 			
-			AddRoundKey(roundkey_guess, &set1_ciphertext[ct*16]);
+			AddRoundKey(roundkey_guess, &tmp[ct*16]);
 			// printf("after AddRoundKey: set1_ciphertext=0x%x\n", set1_ciphertext[ct*16]);
 			
-			InvShiftRows(&set1_ciphertext[ct*16]);
+			InvShiftRows(&tmp[ct*16]);
 			// printf("after InvShiftRows: set1_ciphertext=0x%x\n", set1_ciphertext[ct*16]);
 			
-			SubBytes(&set1_ciphertext[ct*16], SI);
+			SubBytes(&tmp[ct*16], SI);
 			// printf("after InvSubBytes: set1_ciphertext=0x%x\n", set1_ciphertext[ct*16]);
 
-			sum ^=set1_ciphertext[ct*16];
+			sum ^=tmp[ct*16];
 			// printf("sum=%x\n", sum);
 			
 		 	// }
 		}
 		// If guessed round key (rk) tried on all values of CipherText sums to 0 then rk is a candidate
 		if(sum == 0){
-			tmp[rk] = 0x01;
+			tmp_candidates[rk] = 0x01;
 		} else {
-			tmp[rk] = 0x00;
+			tmp_candidates[rk] = 0x00;
 		}
 	}
 	
 	for(i=0; i<256; i++){
-		candidates[i] *= tmp[i];
+		candidates[i] *= tmp_candidates[i];
 	}
 	
-	// for(i=0; i<256; i++){
-		// printf("rk: 0x%x = 0x%x\t tmp = 0x%x\n", i, candidates[i], tmp[i]);
-	// }
-	
-	
-	return 0;
-}
-
-
-void integral(unsigned char ciphertext_set[]){
-	
-	int i;
-	unsigned char tmp[256];
-	
-	// Copy set to local scope for processing
 	for(i=0; i<256; i++){
-		tmp[i] = ciphertext_set[i];
+		printf("rk: 0x%x = 0x%x\t tmp = 0x%x\n", i, candidates[i], tmp_candidates[i]);
 	}
 	
 	

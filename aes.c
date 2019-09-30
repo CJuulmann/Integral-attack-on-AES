@@ -166,41 +166,41 @@ void AES_ENC(unsigned char * plaintext, unsigned char * roundkey, unsigned char 
 	for(i=0; i<16; i++)
 		state[i] |= plaintext[i];
 	
-	printf("============\npre-whitening\n"); PrintState(state);
+	// printf("============\npre-whitening\n"); PrintState(state);
 	
 	//round 0:
-	printf("round-key\n"); PrintState(roundkey);
+	// printf("round-key\n"); PrintState(roundkey);
 	AddRoundKey(roundkey, state);
-	printf("round 0\n"); PrintState(state);
+	// printf("round 0\n"); PrintState(state);
 	
 	//round 1 to n-1
 	for(i=1; i<=rounds-1; i++){
-		printf("round %d\n", i);
+		// printf("round %d\n", i);
 		SubBytes(state, S);
-		PrintState(state);
+		// PrintState(state);
 	
 	
 		ShiftRows(state);
-		PrintState(state);
+		// PrintState(state);
 	
 		MixColumns(M, state);
-		PrintState(state);
+		// PrintState(state);
 			
 		AddRoundKey(&roundkey[i*16], state);
-		PrintState(state); 
+		// PrintState(state);
 	}
-	printf("round %d\n", i);
+	// printf("round %d\n", i);
 	
 	//last round
 	SubBytes(state, S);
-	PrintState(state);
+	// PrintState(state);
 	
 	ShiftRows(state);
-	PrintState(state);
+	// PrintState(state);
 	
-	printf("round key \n"); PrintState(&roundkey[i*16]);
+	// printf("round key \n"); PrintState(&roundkey[i*16]);
 	AddRoundKey(&roundkey[i*16], state);
-	PrintState(state); 
+	// PrintState(state);
 }
 
 
