@@ -198,7 +198,7 @@ void AES_ENC(unsigned char * plaintext, unsigned char * roundkey, unsigned char 
 	ShiftRows(state);
 	PrintState(state);
 	
-	printf("round key "); PrintState(&roundkey[i*16]);
+	printf("round key \n"); PrintState(&roundkey[i*16]);
 	AddRoundKey(&roundkey[i*16], state);
 	PrintState(state); 
 }

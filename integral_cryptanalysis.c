@@ -27,8 +27,8 @@ unsigned char roundkeys[] = {
 };
 
 // Input
-unsigned char set1_plaintext[4096] = {[0 ... 4095] = 1 };
-unsigned char set1_ciphertext[4096] = { 0 };
+unsigned char set1_plaintext[4096] = {[0 ... 4095] = 0x00 };
+unsigned char set1_ciphertext[4096] = { 0x00 };
 
 /*
 unsigned char set2_plaintext[4096] = {[0 ... 4095] = 1 };
@@ -40,6 +40,8 @@ unsigned char set3_ciphertext[4096] = { 0 };
 unsigned char set4_plaintext[4096] = {[0 ... 4095] = 3 };
 unsigned char set4_ciphertext[4096] = { 0 };
 */
+
+void integral(unsigned char ciphertext_set[]);
 
 int main(){
 
@@ -58,52 +60,76 @@ int main(){
 	
 	// Guessing roundkey on ciphertext set
 	int rk,ct;
-	unsigned char roundkey_guess;
+	unsigned char roundkey_guess[16] = { 0x00 };
 	unsigned char sum;
-	unsigned char candidates[256] = {[0 ... 255] = 1 };
+	unsigned char candidates[256] = {[0 ... 255] = 0x01 };
 	unsigned char tmp[256] = { 0 };
-	
+		
 	// Searching roundkey-space for that one byte
 	for(rk=0; rk<256; rk++){
-		sum = 0;
-		roundkey_guess = (unsigned char) rk;
-		printf("rk=%d roundkey_guess:%x\n",rk, roundkey_guess);
-		//printf("roundkey_guess=%x\n", roundkey_guess);
-		
-		// Searching ciphertexts for that one byte 
+		sum = 0x00;	
+		roundkey_guess[0] = (unsigned char) rk;
+		// printf("roundkey_guess vector=");PrintState(roundkey_guess);
+			
+		// Searching with key guess on all ciphertexts values for one byte at a time
 		for(ct=0; ct<256; ct++){
-			printf("rk_guess=%x\t ciphertext=%x\n", roundkey_guess, set1_ciphertext[ct*16]);
-			AddRoundKey(&roundkey_guess, &set1_ciphertext[ct*16]);
-			printf("add rk inv - ct=%x: ", ct); PrintState(&set1_ciphertext[ct*16]);
+			// if(roundkey_guess[0] == 0x47){
+			// printf("\nct=0x%x:\n", set1_ciphertext[ct*16]);
+			// printf("before AddRoundKey: set1_ciphertext=0x%x\n", set1_ciphertext[ct*16]);
 			
-			/*InvShiftRows(&set1_ciphertext[ct*16]);
+			AddRoundKey(roundkey_guess, &set1_ciphertext[ct*16]);
+			// printf("after AddRoundKey: set1_ciphertext=0x%x\n", set1_ciphertext[ct*16]);
+			
+			InvShiftRows(&set1_ciphertext[ct*16]);
+			// printf("after InvShiftRows: set1_ciphertext=0x%x\n", set1_ciphertext[ct*16]);
+			
 			SubBytes(&set1_ciphertext[ct*16], SI);
-			
-			// Sum ciphertext byte
+			// printf("after InvSubBytes: set1_ciphertext=0x%x\n", set1_ciphertext[ct*16]);
+
 			sum ^=set1_ciphertext[ct*16];
-			*/
+			// printf("sum=%x\n", sum);
+			
+		 	// }
 		}
-
-	//	printf("sum=%x\n", sum);
-
+		// If guessed round key (rk) tried on all values of CipherText sums to 0 then rk is a candidate
 		if(sum == 0){
-			tmp[rk] = 1;
+			tmp[rk] = 0x01;
 		} else {
-			tmp[rk] = 0;
+			tmp[rk] = 0x00;
 		}
-	}
-	
-/*	for(i=0; i<256; i++){
-		candidates[i] *= tmp[i];
 	}
 	
 	for(i=0; i<256; i++){
-		printf("rk: %d = %x\t tmp = %x\n", i, candidates[i], tmp[i]);
+		candidates[i] *= tmp[i];
 	}
-	*/
+	
+	// for(i=0; i<256; i++){
+		// printf("rk: 0x%x = 0x%x\t tmp = 0x%x\n", i, candidates[i], tmp[i]);
+	// }
+	
 	
 	return 0;
 }
+
+
+void integral(unsigned char ciphertext_set[]){
+	
+	int i;
+	unsigned char tmp[256];
+	
+	// Copy set to local scope for processing
+	for(i=0; i<256; i++){
+		tmp[i] = ciphertext_set[i];
+	}
+	
+	
+}
+
+
+
+
+
+
 
 
 
