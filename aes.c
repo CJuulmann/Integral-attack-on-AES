@@ -155,6 +155,8 @@ unsigned char mulBy02(unsigned char * ptr){
 /* ==================================
 	AES encryption
    ================================== */
+// ought to modify to just work on one global array and one local; input global vector, allocate local to work on, then cpy
+// .. encrypted vector to global input vector and return 
 void AES_enc(unsigned char * plaintext, unsigned char * roundkey, unsigned char * state, unsigned char * S, int rounds){
 		
 	int i;
@@ -168,7 +170,6 @@ void AES_enc(unsigned char * plaintext, unsigned char * roundkey, unsigned char 
 	
 	// Round 1 to n-1
 	for(i=1; i<=rounds-1; i++){
-
 		subBytes(state, S);
 		shiftRows(state);
 		mixColumns(M, state);
